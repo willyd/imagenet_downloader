@@ -29,8 +29,9 @@ import tempfile
 import threading
 import time
 import urllib2
+import glob
 
-def download(url, timeout, retry, sleep):
+def download(url, timeout, retry, sleep, verbose=False):
     """Downloads a file at given URL."""
     count = 0
     while True:
@@ -43,11 +44,15 @@ def download(url, timeout, retry, sleep):
             break
         except urllib2.HTTPError as e:
             if 500 <= e.code < 600:
+                if verbose:
+                    sys.stderr.write('Error: HTTP with code ' + e.code)
                 count += 1
                 if count > retry:
                     raise
             else:
-                break
+                if verbose:
+                    sys.stderr.write('Error: HTTP with code ' + e.code)
+                raise
         except urllib2.URLError as e:
             if isinstance(e.reason, socket.gaierror):
                 count += 1
@@ -124,12 +129,21 @@ def download_imagenet(list_filename,
                     continue
 
                 directory = os.path.join(out_dir, name.split('_')[0])
-                content = download(url, timeout, retry, sleep_after_dl)
+                rpath = os.path.join(directory, '{0}.*'.format(name))
+                lf = glob.glob(rpath)
+                if lf:
+                    print "skipping: already have", lf[0]
+                    counts_success[i] += 1
+                    entries.task_done()
+                    continue
+
+                content = download(url, timeout, retry, sleep_after_dl,verbose)
                 ext = imgtype2ext(imghdr.what('', content))
                 try:
                     make_directory(directory)
                 except:
                     pass
+                print "ext=", ext
                 path = os.path.join(directory, '{0}.{1}'.format(name, ext))
                 with open(path, 'w') as f:
                     f.write(content)
@@ -139,8 +153,8 @@ def download_imagenet(list_filename,
             except Exception as e:
                 counts_fail[i] += 1
                 if verbose:
-                    sys.stderr.write('Error: {0}: {1}\n'.format(name, e))
-
+                    sys.stderr.write('Error: {0} / {1}: {2}\n'.format(name, url, e))
+            
             entries.task_done()
 
     def message_loop():
