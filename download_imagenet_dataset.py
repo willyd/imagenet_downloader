@@ -86,11 +86,12 @@ def download_imagenet(list_filename,
 
     count_total = 0
     with open(list_filename) as list_in:
-        for line in list_in:
-            count_total += 1
+        for i, l in enumerate(list_in):
+            pass
+        count_total = i + 1
 
     sys.stderr.write('Total: {0}\n'.format(count_total))
-
+    
     num_jobs = max(num_jobs, 1)
 
     entries = Queue.Queue(num_jobs)
