@@ -46,6 +46,8 @@ def download(url, timeout, retry, sleep):
                 count += 1
                 if count > retry:
                     raise
+            else:
+                break
         except urllib2.URLError as e:
             if isinstance(e.reason, socket.gaierror):
                 count += 1
