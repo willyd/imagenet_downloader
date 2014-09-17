@@ -45,23 +45,31 @@ def download(url, timeout, retry, sleep, verbose=False):
         except urllib2.HTTPError as e:
             if 500 <= e.code < 600:
                 if verbose:
-                    sys.stderr.write('Error: HTTP with code ' + e.code)
+                    sys.stderr.write('Error: HTTP with code {0}\n'.format(e.code))
                 count += 1
                 if count > retry:
+                    if verbose:
+                        sys.stderr.write('Error: too many retries on {0}\n'.format(url))
                     raise
             else:
                 if verbose:
-                    sys.stderr.write('Error: HTTP with code ' + e.code)
+                    sys.stderr.write('Error: HTTP with code {0}\n'.format(e.code))
                 raise
         except urllib2.URLError as e:
             if isinstance(e.reason, socket.gaierror):
                 count += 1
                 time.sleep(sleep)
                 if count > retry:
+                    if verbose:
+                        sys.stderr.write('Error: too many retries on {0}\n'.format(url))
                     raise
             else:
+                if verbose:
+                    sys.stderr.write('Error: URLError {0}\n'.format(e))
                 raise
-
+        #except Exception as e:
+        #    if verbose:
+        #        sys.stderr.write('Error: unknown during download: {0}\n'.format(e))
     return content
 
 def imgtype2ext(typ):
@@ -124,7 +132,7 @@ def download_imagenet(list_filename,
             try:
                 if name is None:
                     if verbose:
-                        sys.stderr.write('Error: Invalid line: ' + line)
+                        sys.stderr.write('Error: Invalid line: {0}\n'.line)
                     counts_fail[i] += 1
                     continue
 
@@ -137,13 +145,12 @@ def download_imagenet(list_filename,
                     entries.task_done()
                     continue
 
-                content = download(url, timeout, retry, sleep_after_dl,verbose)
+                content = download(url, timeout, retry, sleep_after_dl)
                 ext = imgtype2ext(imghdr.what('', content))
                 try:
                     make_directory(directory)
                 except:
                     pass
-                print "ext=", ext
                 path = os.path.join(directory, '{0}.{1}'.format(name, ext))
                 with open(path, 'w') as f:
                     f.write(content)
