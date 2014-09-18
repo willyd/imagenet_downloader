@@ -91,7 +91,8 @@ def download_imagenet(list_filename,
                       num_jobs=1,
                       sleep_after_dl=1,
                       verbose=False,
-                      offset=0):
+                      offset=0,
+                      msg=1):
     """Downloads to out_dir all images whose names and URLs are written in file
     of name list_filename.
     """
@@ -187,7 +188,7 @@ def download_imagenet(list_filename,
                 '{0} / {1} ({2}%) done, {3} / {0} ({4}%) succeeded                    {5}'.format(
                     count, count_total, rate_done, count_success, rate_success, delim))
 
-            time.sleep(1)
+            time.sleep(msg)
         sys.stderr.write('done')
 
     producer_thread = threading.Thread(target=producer)
@@ -229,8 +230,11 @@ if __name__ == '__main__':
                    help='Enable verbose messages')
     p.add_argument('--offset', '-o', type=int, default=0,
                    help='Offset to where to start in Imagenet list file')
+    p.add_argument('--msg', '-m', type=int, default=1,
+                   help='Logging message every x seconds')
     args = p.parse_args()
 
     download_imagenet(args.list, args.outdir,
                       timeout=args.timeout, retry=args.retry,
-                      num_jobs=args.jobs, verbose=args.verbose, offset=args.offset)
+                      num_jobs=args.jobs, verbose=args.verbose, 
+                      offset=args.offset, msg=args.msg)
