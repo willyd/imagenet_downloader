@@ -21,28 +21,32 @@
 
 import argparse
 import imghdr
-import Queue
 import os
 import socket
 import sys
 import tempfile
 import threading
 import time
-import urllib2
 import glob
+import six
+from six.moves import queue as Queue
+from six.moves.urllib.request import urlopen
+from six.moves.urllib.error import HTTPError, URLError
+from six.moves import xrange
+
 
 def download(url, timeout, retry, sleep, verbose=False):
     """Downloads a file at given URL."""
     count = 0
     while True:
         try:
-            f = urllib2.urlopen(url, timeout=timeout)
+            f = urlopen(url, timeout=timeout)
             if f is None:
                 raise Exception('Cannot open URL {0}'.format(url))
             content = f.read()
             f.close()
             break
-        except urllib2.HTTPError as e:
+        except HTTPError as e:
             if 500 <= e.code < 600:
                 if verbose:
                     sys.stderr.write('Error: HTTP with code {0}\n'.format(e.code))
@@ -55,7 +59,7 @@ def download(url, timeout, retry, sleep, verbose=False):
                 if verbose:
                     sys.stderr.write('Error: HTTP with code {0}\n'.format(e.code))
                 raise
-        except urllib2.URLError as e:
+        except URLError as e:
             if isinstance(e.reason, socket.gaierror):
                 count += 1
                 time.sleep(sleep)
@@ -100,7 +104,7 @@ def download_imagenet(list_filename,
     make_directory(out_dir)
 
     count_total = 0
-    with open(list_filename) as list_in:
+    with open(list_filename, encoding='utf8') as list_in:
         for i, l in enumerate(list_in):
             pass
         count_total = i + 1
@@ -118,7 +122,7 @@ def download_imagenet(list_filename,
 
     def producer():
         count = 0
-        with open(list_filename) as list_in:
+        with open(list_filename, encoding='utf8') as list_in:
             for line in list_in:
                 if count >= offset:
                     name, url = line.strip().split(None, 1)
@@ -146,7 +150,7 @@ def download_imagenet(list_filename,
                 rpath = os.path.join(directory, '{0}.*'.format(name))
                 lf = glob.glob(rpath)
                 if lf:
-                    print "skipping: already have", lf[0]
+                    print("skipping: already have", lf[0])
                     counts_success[i] += 1
                     entries.task_done()
                     continue
@@ -158,7 +162,7 @@ def download_imagenet(list_filename,
                 except:
                     pass
                 path = os.path.join(directory, '{0}.{1}'.format(name, ext))
-                with open(path, 'w') as f:
+                with open(path, 'wb') as f:
                     f.write(content)
                 counts_success[i] += 1
                 time.sleep(sleep_after_dl)
